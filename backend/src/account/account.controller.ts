@@ -11,6 +11,7 @@ export class CreateAccountDto {
   account: string;
   password: string;
   broker: string;
+  platform: string;
 }
 
 export class DeleteAccountDto {
@@ -27,6 +28,14 @@ export class StopAccountDto {
 
 @Controller('account')
 export class AccountController {
+  platformPath = '' as string;
+  resourcePath = '' as string;
+
+  constructor() {
+    this.platformPath = __dirname + '/../../../platforms/';
+    this.resourcePath = __dirname + '/../../../resources/';
+  }
+
   async extractZip(filename, folderName) {
     return new Promise((resolve, reject) => {
       fs.createReadStream(filename)
@@ -62,43 +71,63 @@ export class AccountController {
     });
   }
 
+  writeData(accountName, name, value) {
+    if (value) {
+      const folderName =
+        this.platformPath +
+        accountName +
+        '/TradingPlatformManager/Data/' +
+        name +
+        '.txt';
+      fs.writeFileSync(folderName, value);
+    }
+  }
+
+  readData(file, name) {
+    const folderName = this.platformPath + file;
+    const dataFolderName =
+      folderName + '/TradingPlatformManager/Data/' + name + '.txt';
+    return fs.existsSync(dataFolderName)
+      ? fs.readFileSync(dataFolderName, { encoding: 'utf-8' })
+      : '';
+  }
+
   @Post('add')
   async addAccount(@Body() createAccountDto: CreateAccountDto) {
-    const folderName =
-      __dirname + '/../../../platforms/' + createAccountDto.name;
+    const folderName = this.platformPath + createAccountDto.name;
     try {
       if (fs.existsSync(folderName)) {
         throw new Error('Account already exists');
       }
       await this.extractZip(
-        __dirname + '/../../../setups/metatrader5.zip',
+        this.resourcePath + 'MT5/Setups/metatrader5.zip',
         folderName,
       );
       fs.mkdirSync(folderName + '/TradingPlatformManager');
       fs.mkdirSync(folderName + '/TradingPlatformManager/Data');
       fs.mkdirSync(folderName + '/TradingPlatformManager/Config');
-      if (createAccountDto.account) {
-        fs.writeFileSync(
-          folderName + '/TradingPlatformManager/Data/Account.txt',
-          createAccountDto.account,
-        );
-      }
-      if (createAccountDto.password) {
-        fs.writeFileSync(
-          folderName + '/TradingPlatformManager/Data/Password.txt',
-          createAccountDto.password,
-        );
-      }
-      if (createAccountDto.broker) {
-        fs.writeFileSync(
-          folderName + '/TradingPlatformManager/Data/Broker.txt',
-          createAccountDto.broker,
-        );
-      }
+      fs.mkdirSync(folderName + '/MQL5/Profiles/Charts/TTM');
+
+      this.writeData(
+        createAccountDto.name,
+        'account',
+        createAccountDto.account,
+      );
+      this.writeData(
+        createAccountDto.name,
+        'password',
+        createAccountDto.password,
+      );
+      this.writeData(createAccountDto.name, 'broker', createAccountDto.broker);
+      this.writeData(
+        createAccountDto.name,
+        'platform',
+        createAccountDto.platform,
+      );
 
       fs.writeFileSync(
         folderName + '/start.bat',
-        'terminal64.exe /portable /config:TradingPlatformManager\\Config\\Config.ini',
+        'terminal64.exe /portable /config:TradingPlatformManager\\Config\\Config.ini /profile:TTM',
       );
 
       if (
@@ -110,6 +139,14 @@ export class AccountController {
         config += '\nLogin=' + createAccountDto.account;
         config += '\nPassword=' + createAccountDto.password;
         config += '\nServer=' + createAccountDto.broker;
+
+        config += '\n';
+        config += '\n[Expert]';
+        config += '\nAllowLiveTrading=1';
+        config += '\nAllowDllImport=1';
+        config += '\nEnabled=1';
+        config += '\nProfile=0';
+
         fs.writeFileSync(
           folderName + '/TradingPlatformManager/Config/Config.ini',
           config,
@@ -124,46 +161,49 @@ export class AccountController {
   @Get('list')
   async listAccounts() {
     const accounts = [];
-    const folderName = __dirname + '\\..\\..\\..\\platforms';
-    const files = fs.readdirSync(folderName);
+    const files = fs.readdirSync(this.platformPath);
     for (const file of files) {
       const tasks = await this.getTaskByPath(
-        folderName + '\\' + file + '\\terminal64.exe',
+        this.platformPath + file + '\\terminal64.exe',
       );
       const isRunning = tasks.length > 0;
+      let status = '';
+      if (isRunning) {
+        if (
+          fs.existsSync(
+            this.platformPath +
+              file +
+              '/MQL5/Files/TradingTerminalManagerData/status.txt',
+          )
+        ) {
+          const currentState = fs.readFileSync(
+            this.platformPath +
+              file +
+              '/MQL5/Files/TradingTerminalManagerData/status.txt',
+            {
+              encoding: 'utf16le',
+            },
+          );
+          status = `Account ${currentState}`;
+        } else {
+          status = 'Account Pending Login';
+        }
+      } else {
+        status = 'Terminal Not Started';
+      }
 
-      accounts.push({
+      const account = {
         name: file,
-        account: fs.existsSync(
-          folderName +
-            '\\' +
-            file +
-            '\\TradingPlatformManager\\Data\\Account.txt',
-        )
-          ? fs.readFileSync(
-              folderName +
-                '\\' +
-                file +
-                '\\TradingPlatformManager\\Data\\Account.txt',
-              { encoding: 'utf-8' },
-            )
-          : '',
-        broker: fs.existsSync(
-          folderName +
-            '\\' +
-            file +
-            '\\TradingPlatformManager\\Data\\Broker.txt',
-        )
-          ? fs.readFileSync(
-              folderName +
-                '\\' +
-                file +
-                '\\TradingPlatformManager\\Data\\Broker.txt',
-              { encoding: 'utf-8' },
-            )
-          : '',
-        status: isRunning ? 'Running' : 'Stopped',
-      });
+        status: status,
+      };
+      const attributes = fs.readdirSync(
+        this.platformPath + file + '/TradingPlatformManager/Data',
+      );
+      for (const attribute of attributes) {
+        const formattedAttribute = attribute.replace('.txt', '');
+        account[formattedAttribute] = this.readData(file, formattedAttribute);
+      }
+      accounts.push(account);
     }
     return {
       status: 'success',
@@ -186,15 +226,45 @@ export class AccountController {
 
   @Post('start')
   async startAccount(@Body() startAccountDto: StartAccountDto) {
-    let folderName = __dirname + '/../../../platforms/' + startAccountDto.name;
+    let folderName = this.platformPath + startAccountDto.name;
     folderName = path.resolve(folderName);
+
+    if (fs.existsSync(folderName + '/MQL5/Profiles/Charts/TTM')) {
+      fs.rmdirSync(folderName + '/MQL5/Profiles/Charts/TTM', {
+        recursive: true,
+      });
+    }
+    fs.mkdirSync(folderName + '/MQL5/Profiles/Charts/TTM');
+    if (!fs.existsSync(folderName + '/MQL5/Files')) {
+      fs.mkdirSync(folderName + '/MQL5/Files');
+    }
+    if (fs.existsSync(folderName + '/MQL5/Files/TradingTerminalManagerData')) {
+      fs.rmdirSync(folderName + '/MQL5/Files/TradingTerminalManagerData', {
+        recursive: true,
+      });
+    }
+    fs.mkdirSync(folderName + '/MQL5/Files/TradingTerminalManagerData');
+
+    const tradingTerminalChartData = fs.readFileSync(
+      this.resourcePath + 'MT5/Charts/TradingTerminalManagerChart.chr',
+      { encoding: 'utf16le' },
+    );
+    fs.writeFileSync(
+      folderName + '/MQL5/Profiles/Charts/TTM/chart01.chr',
+      tradingTerminalChartData,
+    );
+    fs.copyFileSync(
+      this.resourcePath + 'MT5/Experts/TradingTerminalManager.ex5',
+      folderName + '/MQL5/Experts/TradingTerminalManager.ex5',
+    );
+
     exec('start cmd /c "cd ' + folderName + ' && start.bat"');
     return { status: 'success', message: 'Account started' };
   }
 
   @Post('stop')
   async stopAccount(@Body() stopAccountDto: StopAccountDto) {
-    const folderName = __dirname + '/../../../platforms/' + stopAccountDto.name;
+    const folderName = this.platformPath + stopAccountDto.name;
     const tasks = await this.getTaskByPath(folderName + '\\terminal64.exe');
     for (const task of tasks) {
       await this.stopProcess(task.pid);

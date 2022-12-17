@@ -3,6 +3,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountController } from './account/account.controller';
+import { ConfigController } from './config/config.controller';
 
 @Module({
   imports: [
@@ -10,7 +11,7 @@ import { AccountController } from './account/account.controller';
       rootPath: __dirname + '/../../frontend/dist',
     }),
   ],
-  controllers: [AppController, AccountController],
+  controllers: [AppController, AccountController, ConfigController],
   providers: [AppService],
 })
 export class AppModule {}

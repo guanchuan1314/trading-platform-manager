@@ -1,5 +1,5 @@
 <script setup>
-import { mdiTableBorder, mdiPlus } from "@mdi/js";
+import { mdiAccountGroupOutline, mdiPlus } from "@mdi/js";
 import SectionMain from "@/components/SectionMain.vue";
 import AccountsTable from "@/components/AccountsTable.vue";
 import CardBox from "@/components/CardBox.vue";
@@ -20,7 +20,13 @@ let form = reactive({
   account: "",
   password: "",
   broker: "",
+  platform: "mt5",
 });
+
+const platformOptions = [
+  { id: "mt4", label: "Metatrader 4 (Not supported at the moment)" },
+  { id: "mt5", label: "Metatrader 5" },
+];
 
 let addAccountErrorMessage = ref("");
 
@@ -42,34 +48,57 @@ const stopAccount = async (name) => {
   }
 };
 
-const addAccount = async () => {
-  if (form.name == "") {
-    addAccountErrorMessage.value = "Name is required";
-    showAddAccount.value = true;
-    return;
-  }
-  if (form.account == "") {
-    addAccountErrorMessage.value = "Account is required";
-    showAddAccount.value = true;
-    return;
-  }
-  if (form.password == "") {
-    addAccountErrorMessage.value = "Password is required";
-    showAddAccount.value = true;
-    return;
-  }
+const cancelAddAccount = () => {
+  form.name = "";
+  form.account = "";
+  form.password = "";
+  form.broker = "";
+};
 
-  let response = await axios.post("/api/account/add", form);
-  if (response.data.status == "success") {
-    showAddAccount.value = false;
-    form.name = "";
-    form.account = "";
-    form.password = "";
-    form.broker = "";
-    await listAccounts();
-  } else {
-    addAccountErrorMessage.value = response.data.message;
-    showAddAccount.value = true;
+const displayAddAccountError = (message) => {
+  showAddAccount.value = true;
+  addAccountErrorMessage.value = message;
+};
+
+const addAccount = async () => {
+  try {
+    if (form.name == "") {
+      displayAddAccountError("Name is required");
+      return;
+    }
+    if (form.account == "") {
+      displayAddAccountError("Account is required");
+      return;
+    }
+    if (form.password == "") {
+      displayAddAccountError("Password is required");
+      return;
+    }
+    if (form.broker == "") {
+      displayAddAccountError("Broker is required");
+      return;
+    }
+    if (form.platform == "") {
+      displayAddAccountError("Platform is required");
+      return;
+    }
+
+    let response = await axios.post("/api/account/add", form);
+    if (response.data.status == "success") {
+      showAddAccount.value = false;
+      form.name = "";
+      form.account = "";
+      form.password = "";
+      form.broker = "";
+      await listAccounts();
+    } else {
+      addAccountErrorMessage.value = response.data.message;
+      showAddAccount.value = true;
+    }
+  } catch (e) {
+    displayAddAccountError(
+      e.response && e.response.data ? e.response.data.message : e.message
+    );
   }
 };
 
@@ -100,11 +129,18 @@ listAccounts();
       has-cancel
       :message="addAccountErrorMessage"
       @confirm="addAccount()"
+      @cancel="cancelAddAccount()"
     >
       <FormField label="Name" help="">
         <FormControl v-model="form.name" type="text" autocomplete="nofill" />
       </FormField>
-      <FormField label="Broker" help="">
+      <FormField class="py-3" label="Select platform">
+        <FormControl v-model="form.platform" :options="platformOptions" />
+      </FormField>
+      <FormField
+        label="Broker Server"
+        help="Broker Server, eg: MetaQuotes-Demo"
+      >
         <FormControl v-model="form.broker" type="text" autocomplete="nofill" />
       </FormField>
       <FormField label="Account" help="MT5 account">
@@ -119,7 +155,11 @@ listAccounts();
       </FormField>
     </CardBoxModal>
     <SectionMain>
-      <SectionTitleLineWithButton :icon="mdiTableBorder" title="Accounts" main>
+      <SectionTitleLineWithButton
+        :icon="mdiAccountGroupOutline"
+        title="Accounts"
+        main
+      >
         <BaseButton
           :icon="mdiPlus"
           color="info"

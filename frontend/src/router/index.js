@@ -23,11 +23,11 @@ const routes = [
   },
   {
     meta: {
-      title: "Updates",
+      title: "Configs",
     },
-    path: "/updates",
-    name: "updates",
-    component: () => import("@/views/UpdatesView.vue"),
+    path: "/configs",
+    name: "configs",
+    component: () => import("@/views/ConfigsView.vue"),
   },
 ];
 

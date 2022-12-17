@@ -1,4 +1,4 @@
-import { mdiUpdate, mdiAccountGroupOutline, mdiMonitor } from "@mdi/js";
+import { mdiCogOutline, mdiAccountGroupOutline, mdiMonitor } from "@mdi/js";
 
 export default [
   {
@@ -12,8 +12,8 @@ export default [
     label: "Accounts",
   },
   {
-    to: "/updates",
-    icon: mdiUpdate,
-    label: "Updates",
-  }
+    to: "/configs",
+    icon: mdiCogOutline,
+    label: "Configs",
+  },
 ];
