@@ -1,5 +1,18 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipeBuilder,
+  BadRequestException,
+} from '@nestjs/common';
+import { Req } from '@nestjs/common/decorators';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { execFile } from 'child_process';
 import * as fs from 'fs';
+import { diskStorage } from 'multer';
 
 export class CreateConfigDto {
   name: string;
@@ -62,11 +75,15 @@ export class ConfigController {
   }
 
   @Get('list')
-  listConfig() {
+  listConfigs() {
     const configs = [];
     const files = fs.readdirSync(this.configPath);
 
     for (const file of files) {
+      if (!fs.lstatSync(this.configPath + file).isDirectory()) {
+        continue;
+      }
+
       const data = {
         name: file,
       };
@@ -75,6 +92,38 @@ export class ConfigController {
         const formattedAttribute = attribute.replace('.txt', '');
         data[formattedAttribute] = this.readData(file, formattedAttribute);
       }
+
+      const uploadedAttributes = [];
+
+      if (
+        fs.existsSync(this.configPath + file + '/expert.ex5') ||
+        fs.existsSync(this.configPath + file + '/expert.ex4')
+      ) {
+        uploadedAttributes.push({
+          name: 'Expert',
+          value: true,
+          type: 'expert',
+        });
+      } else {
+        uploadedAttributes.push({
+          name: 'Expert',
+          value: false,
+          type: 'expert',
+        });
+      }
+
+      if (fs.existsSync(this.configPath + file + '/set.set')) {
+        uploadedAttributes.push({ name: 'Set File', value: true, type: 'set' });
+      } else {
+        uploadedAttributes.push({
+          name: 'Set File',
+          value: false,
+          type: 'set',
+        });
+      }
+
+      data['uploadedAttributes'] = uploadedAttributes;
+
       configs.push(data);
     }
 
@@ -93,5 +142,66 @@ export class ConfigController {
       fs.rmdirSync(folderName, { recursive: true });
     }
     return { status: 'success', message: 'Config deleted' };
+  }
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const configPath = __dirname + '/../../../configs/';
+          const folderName = configPath + req.body.name;
+          cb(null, folderName);
+        },
+        filename: (req, file, cb) => {
+          let formattedFileName = '';
+          if (req.body.type === 'expert') {
+            if (req.body.platform === 'mt5') {
+              formattedFileName = 'expert.ex5';
+            } else if (req.body.platform === 'mt4') {
+              formattedFileName = 'expert.ex4';
+            }
+          } else if (req.body.type == 'set') {
+            formattedFileName = 'set.set';
+          }
+          cb(null, formattedFileName);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (req.body.type === 'expert') {
+          if (
+            req.body.platform === 'mt5' &&
+            file.originalname.indexOf('ex5') === -1
+          ) {
+            req.fileValidationError = 'Only ex5 file is allowed.';
+            cb(null, false);
+          } else if (
+            req.body.platform === 'mt4' &&
+            file.originalname.indexOf('ex4') === -1
+          ) {
+            req.fileValidationError = 'Only ex4 file is allowed.';
+            cb(null, false);
+          }
+        } else if (
+          req.body.type == 'set' &&
+          file.originalname.indexOf('set') == -1
+        ) {
+          req.fileValidationError = 'Only set file is allowed.';
+          cb(null, false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  uploadConfigFile(
+    @Body() body,
+    @Req() req,
+    @UploadedFile()
+    file: Express.Multer.File,
+  ) {
+    if (req.fileValidationError) {
+      throw new BadRequestException(req.fileValidationError);
+    }
+    return { status: 'success', message: 'Config file uploaded' };
   }
 }

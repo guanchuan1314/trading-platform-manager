@@ -163,6 +163,9 @@ export class AccountController {
     const accounts = [];
     const files = fs.readdirSync(this.platformPath);
     for (const file of files) {
+      if (!fs.lstatSync(this.platformPath + file).isDirectory()) {
+        continue;
+      }
       const tasks = await this.getTaskByPath(
         this.platformPath + file + '\\terminal64.exe',
       );

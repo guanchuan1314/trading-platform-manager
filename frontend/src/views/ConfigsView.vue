@@ -11,10 +11,12 @@ import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
 import { reactive, ref } from "vue";
 import axios from "axios";
+import NotificationBar from "@/components/NotificationBar.vue";
 
 const configs = ref([]);
 const showAddConfigs = ref(false);
 const addConfigErrorMessage = ref("");
+const errorMessage = ref("");
 const form = reactive({
   name: "",
   remark: "",
@@ -53,6 +55,10 @@ const displayAddConfigError = (message) => {
   addConfigErrorMessage.value = message;
 };
 
+const displayGlobalConfigError = (message) => {
+  errorMessage.value = message;
+};
+
 const cancelAddConfig = () => {
   form.name = "";
   form.remark = "";
@@ -61,6 +67,23 @@ const cancelAddConfig = () => {
 
 const addConfig = async () => {
   try {
+    if (!form.name) {
+      displayAddConfigError("Please enter a name for the config.");
+      return;
+    }
+    if (!form.platform) {
+      displayAddConfigError("Please select a platform.");
+      return;
+    }
+    if (!form.timeframe) {
+      displayAddConfigError("Please select a timeframe.");
+      return;
+    }
+    if (!form.symbol) {
+      displayAddConfigError("Please enter a symbol.");
+      return;
+    }
+
     let response = await axios.post("/api/config/add", form);
     if (response.data.status == "success") {
       showAddConfigs.value = false;
@@ -77,18 +100,31 @@ const addConfig = async () => {
 };
 
 const deleteConfig = async (name) => {
-  let response = await axios.post("/api/config/delete", {
-    name: name,
-  });
-  if (response.data.status == "success") {
-    await listConfigs();
+  try {
+    let response = await axios.post("/api/config/delete", {
+      name: name,
+    });
+    if (response.data.status == "success") {
+      await listConfigs();
+      displayGlobalConfigError(`${name} has been deleted.`);
+    }
+  } catch (e) {
+    displayGlobalConfigError(
+      e.response && e.response.data ? e.response.data.message : e.message
+    );
   }
 };
 
 const listConfigs = async () => {
-  let response = await axios.get("/api/config/list");
-  if (response.data.status == "success") {
-    configs.value = response.data.configs;
+  try {
+    let response = await axios.get("/api/config/list");
+    if (response.data.status == "success") {
+      configs.value = response.data.configs;
+    }
+  } catch (e) {
+    displayAddConfigError(
+      e.response && e.response.data ? e.response.data.message : e.message
+    );
   }
 };
 listConfigs();
@@ -133,13 +169,20 @@ listConfigs();
           @click="showAddConfigs = true"
         />
       </SectionTitleLineWithButton>
+      <NotificationBar
+        v-if="errorMessage"
+        :show-dismiss="false"
+        color="danger"
+        :icon="mdiMonitorCellphone"
+      >
+        {{ errorMessage }}
+      </NotificationBar>
       <CardBox class="mb-6" has-table>
         <ConfigsTable
           checkable
           :configs="configs"
           @confirm="deleteConfig"
-          @start-account="startAccount"
-          @stop-account="stopAccount"
+          @reload-configs="listConfigs"
         />
       </CardBox>
     </SectionMain>

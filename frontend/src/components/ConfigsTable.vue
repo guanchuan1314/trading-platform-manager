@@ -1,17 +1,66 @@
 <script setup>
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 import {
   mdiTrashCanOutline,
-  mdiRobotAngryOutline,
-  mdiFileUploadOutline,
+  mdiCheck,
+  mdiAlphaXCircleOutline,
+  mdiCloudUploadOutline,
 } from "@mdi/js";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import BaseLevel from "@/components/BaseLevel.vue";
 import BaseButtons from "@/components/BaseButtons.vue";
 import BaseButton from "@/components/BaseButton.vue";
+import IconRounded from "@/components/IconRounded.vue";
+import axios from "axios";
 
 const showConfirmDeleteConfigModal = ref(false);
 const selectedConfigName = ref("");
+const emit = defineEmits(["reloadConfigs", "confirm"]);
+
+const form = reactive({
+  name: "",
+  type: "",
+  platform: "",
+  file: "",
+});
+
+const resetForm = () => {
+  form.name = "";
+  form.type = "";
+  form.platform = "";
+  form.file = "";
+};
+
+const fileSelected = async (e) => {
+  form.file = e.target.files[0];
+  e.target.value = "";
+  let response = await axios.post("/api/config/upload", form, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  if (response.data.status == "success") {
+    emit("reloadConfigs");
+  }
+  resetForm();
+};
+
+const inputClicked = async (name, type, platform) => {
+  form.type = type;
+  form.platform = platform;
+  form.name = name;
+  let input = "";
+  if (type == "expert" && platform == "mt5") {
+    input = document.getElementById("ex5");
+  } else if (type == "expert" && platform == "mt4") {
+    input = document.getElementById("ex4");
+  } else if (type == "set") {
+    input = document.getElementById("set");
+  }
+  if (input) {
+    input.click();
+  }
+};
 
 const platforms = {
   mt4: "Metatrader 4 (Not supported at the moment)",
@@ -37,8 +86,6 @@ defineProps({
   },
 });
 
-const emit = defineEmits(["confirm"]);
-
 const selectConfigToDelete = (name) => {
   selectedConfigName.value = name;
   showConfirmDeleteConfigModal.value = true;
@@ -60,7 +107,27 @@ const confirmDelete = () => {
   >
     <p>Are you sure you want to delete?</p>
   </CardBoxModal>
-
+  <input
+    id="ex5"
+    type="file"
+    style="display: none"
+    accept=".ex5"
+    @change="fileSelected($event)"
+  />
+  <input
+    id="ex4"
+    type="file"
+    style="display: none"
+    accept=".ex4"
+    @change="fileSelected($event)"
+  />
+  <input
+    id="set"
+    type="file"
+    style="display: none"
+    accept=".set"
+    @change="fileSelected($event)"
+  />
   <table>
     <thead>
       <tr>
@@ -69,6 +136,7 @@ const confirmDelete = () => {
         <th>Symbol</th>
         <th>Timeframe</th>
         <th>Platform</th>
+        <th>Uploaded</th>
         <th>Remark</th>
         <th />
       </tr>
@@ -98,23 +166,53 @@ const confirmDelete = () => {
         <td data-label="Platform">
           {{ platforms[config.platform] }}
         </td>
+        <td data-label="Uploaded">
+          <BaseLevel
+            v-for="uploadedAttribute of config.uploadedAttributes"
+            :key="uploadedAttribute.name"
+            class="mb-2"
+          >
+            {{ uploadedAttribute.name }}
+            <BaseLevel>
+              <BaseLevel>
+                <IconRounded
+                  v-if="uploadedAttribute.value"
+                  :icon="mdiCheck"
+                  color="info"
+                  :w="10"
+                  :h="10"
+                />
+                <IconRounded
+                  v-if="!uploadedAttribute.value"
+                  :icon="mdiAlphaXCircleOutline"
+                  color="danger"
+                  :w="10"
+                  :h="10"
+                />
+              </BaseLevel>
+              <IconRounded
+                style="cursor: pointer"
+                class="ml-2"
+                :icon="mdiCloudUploadOutline"
+                color="contrast"
+                :w="10"
+                :h="10"
+                @click="
+                  inputClicked(
+                    config.name,
+                    uploadedAttribute.type,
+                    config.platform
+                  )
+                "
+              />
+            </BaseLevel>
+          </BaseLevel>
+        </td>
         <td data-label="Remark">
           {{ config.remark }}
         </td>
         <td class="before:hidden lg:w-1 whitespace-nowrap">
           <BaseButtons type="justify-start lg:justify-end" no-wrap>
-            <BaseButton
-              color="info"
-              :icon="mdiRobotAngryOutline"
-              small
-              @click="isModalActive = true"
-            />
-            <BaseButton
-              color="info"
-              :icon="mdiFileUploadOutline"
-              small
-              @click="isModalActive = true"
-            />
             <BaseButton
               color="danger"
               :icon="mdiTrashCanOutline"

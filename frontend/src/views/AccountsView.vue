@@ -125,7 +125,7 @@ listAccounts();
     <CardBoxModal
       v-model="showAddAccount"
       button-label="Add Account"
-      title="Updates"
+      title="Accounts"
       has-cancel
       :message="addAccountErrorMessage"
       @confirm="addAccount()"
