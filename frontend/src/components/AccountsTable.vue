@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import {
-  mdiEyeOutline,
+  mdiCogOutline,
   mdiTrashCanOutline,
   mdiPlayOutline,
   mdiStop,
@@ -19,7 +19,12 @@ defineProps({
   },
 });
 
-const emit = defineEmits(["confirm", "startAccount", "stopAccount"]);
+const emit = defineEmits([
+  "confirm",
+  "startAccount",
+  "stopAccount",
+  "selectConfigs",
+]);
 
 const isModalActive = ref(false);
 
@@ -41,6 +46,10 @@ const stopAccount = (name) => {
 
 const confirmDelete = () => {
   emit("confirm", selectedAccountName.value);
+};
+
+const selectAccountToUpdateConfig = (name) => {
+  emit("selectConfigs", name);
 };
 </script>
 
@@ -92,9 +101,9 @@ const confirmDelete = () => {
           <BaseButtons type="justify-start lg:justify-end" no-wrap>
             <BaseButton
               color="info"
-              :icon="mdiEyeOutline"
+              :icon="mdiCogOutline"
               small
-              @click="isModalActive = true"
+              @click="selectAccountToUpdateConfig(account)"
             />
             <BaseButton
               v-if="account.status == 'Terminal Not Started'"

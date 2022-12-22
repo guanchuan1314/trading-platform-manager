@@ -1,5 +1,5 @@
 <script setup>
-import { mdiAccountGroupOutline, mdiPlus } from "@mdi/js";
+import { mdiAccountGroupOutline, mdiPlus, mdiRefresh } from "@mdi/js";
 import SectionMain from "@/components/SectionMain.vue";
 import AccountsTable from "@/components/AccountsTable.vue";
 import CardBox from "@/components/CardBox.vue";
@@ -13,14 +13,21 @@ import { reactive, ref } from "vue";
 import axios from "axios";
 
 const accounts = ref([]);
+const configs = ref([]);
+const selectedAccount = ref(null);
 
 let showAddAccount = ref(false);
+let showSelectConfigs = ref(false);
 let form = reactive({
   name: "",
   account: "",
   password: "",
   broker: "",
   platform: "mt5",
+});
+let updateConfigForm = reactive({
+  name: "",
+  configs: [],
 });
 
 const platformOptions = [
@@ -29,6 +36,26 @@ const platformOptions = [
 ];
 
 let addAccountErrorMessage = ref("");
+
+const saveConfigs = async () => {
+  let response = await axios.post("/api/account/configs", updateConfigForm);
+  if (response.data.status == "success") {
+    showSelectConfigs.value = false;
+    await listAccounts();
+  }
+};
+
+const selectConfigs = async (account) => {
+  await listConfigs();
+  selectedAccount.value = account;
+  updateConfigForm.name = account.name;
+  for (let config of configs.value) {
+    if (account.configs.includes(config.name)) {
+      updateConfigForm.configs.push(config.name);
+    }
+  }
+  showSelectConfigs.value = true;
+};
 
 const startAccount = async (name) => {
   let response = await axios.post("/api/account/start", {
@@ -111,6 +138,13 @@ const deleteAccount = async (name) => {
   }
 };
 
+const listConfigs = async () => {
+  let response = await axios.get("/api/config/list");
+  if (response.data.status == "success") {
+    configs.value = response.data.configs;
+  }
+};
+
 const listAccounts = async () => {
   let response = await axios.get("/api/account/list");
   if (response.data.status == "success") {
@@ -118,10 +152,41 @@ const listAccounts = async () => {
   }
 };
 listAccounts();
+
+const deployAccounts = async() => {
+  let response = await axios.post("/api/account/deploy");
+  if (response.data.status == "success") {
+    await listAccounts();
+  }
+}
 </script>
 
 <template>
   <LayoutAuthenticated>
+    <CardBoxModal
+      v-model="showSelectConfigs"
+      button-label="Save"
+      title="Select Configs"
+      has-cancel
+      :message="addAccountErrorMessage"
+      @confirm="saveConfigs()"
+      @cancel="cancelAddAccount()"
+    >
+      <div class="h-100">
+        <table>
+          <tr v-for="config in configs" :key="config.name">
+            <td width="10">
+              <input
+                v-model="updateConfigForm.configs"
+                type="checkbox"
+                :value="config.name"
+              />
+            </td>
+            <td>{{ config.name }}</td>
+          </tr>
+        </table>
+      </div>
+    </CardBoxModal>
     <CardBoxModal
       v-model="showAddAccount"
       button-label="Add Account"
@@ -160,18 +225,27 @@ listAccounts();
         title="Accounts"
         main
       >
-        <BaseButton
-          :icon="mdiPlus"
-          color="info"
-          @click="
-            showAddAccount = true;
-            addAccountErrorMessage = '';
-            form.name = '';
-            form.account = '';
-            form.password = '';
-            form.broker = '';
-          "
-        />
+        <div>
+          <BaseButton
+            :icon="mdiPlus"
+            color="info"
+            @click="
+              showAddAccount = true;
+              addAccountErrorMessage = '';
+              form.name = '';
+              form.account = '';
+              form.password = '';
+              form.broker = '';
+            "
+          />
+          <BaseButton
+            class="ml-2"
+            :icon="mdiRefresh"
+            color="danger"
+            label="Deploy"
+            @click="deployAccounts"
+          />
+        </div>
       </SectionTitleLineWithButton>
       <CardBox class="mb-6" has-table>
         <AccountsTable
@@ -179,6 +253,7 @@ listAccounts();
           @confirm="deleteAccount"
           @start-account="startAccount"
           @stop-account="stopAccount"
+          @select-configs="selectConfigs"
         />
       </CardBox>
     </SectionMain>

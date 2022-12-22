@@ -97,7 +97,7 @@ const componentClass = computed(() => {
   } else if (props.small) {
     base.push("text-sm", props.roundedFull ? "px-3 py-1" : "p-1");
   } else {
-    base.push("py-2", props.roundedFull ? "px-6" : "px-3");
+    base.push("py-1", props.roundedFull ? "px-6" : "px-3");
   }
 
   if (props.disabled) {

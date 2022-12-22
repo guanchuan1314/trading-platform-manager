@@ -122,7 +122,7 @@ const listConfigs = async () => {
       configs.value = response.data.configs;
     }
   } catch (e) {
-    displayAddConfigError(
+    displayGlobalConfigError(
       e.response && e.response.data ? e.response.data.message : e.message
     );
   }

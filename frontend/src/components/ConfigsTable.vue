@@ -5,6 +5,7 @@ import {
   mdiCheck,
   mdiAlphaXCircleOutline,
   mdiCloudUploadOutline,
+  mdiCogOutline,
 } from "@mdi/js";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import BaseLevel from "@/components/BaseLevel.vue";
@@ -213,6 +214,12 @@ const confirmDelete = () => {
         </td>
         <td class="before:hidden lg:w-1 whitespace-nowrap">
           <BaseButtons type="justify-start lg:justify-end" no-wrap>
+            <BaseButton
+              color="info"
+              :icon="mdiCogOutline"
+              small
+              @click="isModalActive = true"
+            />
             <BaseButton
               color="danger"
               :icon="mdiTrashCanOutline"
