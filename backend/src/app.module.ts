@@ -4,11 +4,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AccountController } from './controllers/account/account.controller';
 import { ConfigController } from './controllers/config/config.controller';
+import path from 'path';
 
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: __dirname + '/../../frontend/dist',
+      rootPath: path.join(__dirname, '/../../frontend/dist'),
     }),
   ],
   controllers: [AppController, AccountController, ConfigController],
