@@ -41,6 +41,37 @@ export class Config {
         '{{TIMEFRAME}}',
         await this.readData(configName, 'timeframe'),
       );
+
+      if (fs.existsSync(MPath.getConfigPath(configName + '/set.set'))) {
+        const setString = fs.readFileSync(
+          MPath.getConfigPath(configName + '/set.set'),
+          {
+            encoding: 'utf16le',
+          },
+        );
+        const sets = setString.split('\n');
+        const inputs = [];
+        for (const set of sets) {
+          const modifiedSet = set.trim();
+          if (
+            !modifiedSet.startsWith(';') &&
+            modifiedSet[0] &&
+            modifiedSet[0] !== ''
+          ) {
+            const key = modifiedSet.split('=')[0];
+            const valueString = modifiedSet.replace(key + '=', '');
+            const value = valueString.split('||')[0];
+            inputs.push(key + '=' + value);
+          }
+        }
+
+        if (inputs.length > 0) {
+          chartTemplate = chartTemplate.replace(
+            '{{INPUTS}}',
+            inputs.join('\n'),
+          );
+        }
+      }
       return chartTemplate;
     }
     return '';

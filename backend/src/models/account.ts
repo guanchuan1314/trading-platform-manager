@@ -142,10 +142,11 @@ export class Account {
     config += '\nServer=' + broker;
 
     config += '\n';
-    config += '\n[Expert]';
+    config += '\n[Experts]';
     config += '\nAllowLiveTrading=1';
     config += '\nAllowDllImport=1';
     config += '\nEnabled=1';
+    config += '\nAccount=0';
     config += '\nProfile=0';
 
     fs.writeFileSync(
