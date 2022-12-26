@@ -3,7 +3,7 @@ const fs = require('fs-extra');
 
 console.log("Cleaning up old build...");
 if(fs.existsSync('deploy')) {
-    fs.removeSync('deploy', { recursive: true, force: true })
+    fs.rmSync('deploy', { recursive: true, force: true })
 }
 
 console.log("Building new build...");

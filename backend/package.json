@@ -24,7 +24,8 @@
   "bin": "backend/main.js",
   "pkg": {
     "assets": [
-      "backend/frontend"
+      "backend/frontend",
+      "node_modules"
     ]
   },
   "dependencies": {
