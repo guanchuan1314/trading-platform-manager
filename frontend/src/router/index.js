@@ -1,6 +1,54 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-import Style from "@/views/StyleView.vue";
 import Home from "@/views/HomeView.vue";
+import { useMainStore } from "@/stores/main.js";
+import Axios from "@/models/axios.js";
+
+const axios = new Axios();
+
+const ifAuthenticated = (to, from, next) => {
+  const mainStore = useMainStore();
+  if (mainStore.token) {
+    next();
+    return;
+  }
+  router.push({
+    name: "login",
+    params: {
+      returnTo: to.path,
+      query: to.query,
+    },
+  });
+};
+
+const ifSetup = async (to, from, next) => {
+  const response = await axios.get("/api/main/data");
+  if (response.data.status == "success") {
+    next();
+    return;
+  }
+  router.push({
+    name: "register",
+    params: {
+      returnTo: to.path,
+      query: to.query,
+    },
+  });
+};
+
+const ifNotSetup = async (to, from, next) => {
+  const response = await axios.get("/api/main/data");
+  if (response.data.status != "success") {
+    next();
+    return;
+  }
+  router.push({
+    name: "login",
+    params: {
+      returnTo: to.path,
+      query: to.query,
+    },
+  });
+};
 
 const routes = [
   {
@@ -12,6 +60,7 @@ const routes = [
     path: "/",
     name: "dashboard",
     component: Home,
+    beforeEnter: ifAuthenticated,
   },
   {
     meta: {
@@ -20,6 +69,7 @@ const routes = [
     path: "/accounts",
     name: "accounts",
     component: () => import("@/views/AccountsView.vue"),
+    beforeEnter: ifAuthenticated,
   },
   {
     meta: {
@@ -28,6 +78,25 @@ const routes = [
     path: "/configs",
     name: "configs",
     component: () => import("@/views/ConfigsView.vue"),
+    beforeEnter: ifAuthenticated,
+  },
+  {
+    meta: {
+      title: "Login",
+    },
+    path: "/login",
+    name: "login",
+    component: () => import("@/views/LoginView.vue"),
+    beforeEnter: ifSetup,
+  },
+  {
+    meta: {
+      title: "Register",
+    },
+    path: "/register",
+    name: "register",
+    component: () => import("@/views/RegisterView.vue"),
+    beforeEnter: ifNotSetup,
   },
 ];
 

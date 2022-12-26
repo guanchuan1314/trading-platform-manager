@@ -12,8 +12,9 @@ import BaseLevel from "@/components/BaseLevel.vue";
 import BaseButtons from "@/components/BaseButtons.vue";
 import BaseButton from "@/components/BaseButton.vue";
 import IconRounded from "@/components/IconRounded.vue";
-import axios from "axios";
+import Axios from "@/models/axios.js";
 
+const axios = new Axios();
 const showConfirmDeleteConfigModal = ref(false);
 const selectedConfigName = ref("");
 const emit = defineEmits(["reloadConfigs", "confirm"]);
@@ -143,12 +144,16 @@ const confirmDelete = () => {
       </tr>
     </thead>
     <tbody v-if="configs.length == 0">
-      <div class="text-center py-24 text-gray-500 dark:text-slate-400">
-        <p>
-          You haven't add any configs. Please the add button on the top right to
-          add config.
-        </p>
-      </div>
+      <tr>
+        <td colspan="8">
+          <div class="text-center py-24 text-gray-500 dark:text-slate-400">
+            <p>
+              You haven't add any configs. Please the add button on the top
+              right to add config.
+            </p>
+          </div>
+        </td>
+      </tr>
     </tbody>
     <tbody v-if="configs.length > 0">
       <tr v-for="(config, index) in configs" :key="config.name">

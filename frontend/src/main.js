@@ -3,9 +3,8 @@ import { createPinia } from "pinia";
 
 import App from "./App.vue";
 import router from "./router";
-import { useMainStore } from "@/stores/main.js";
 import { useStyleStore } from "@/stores/style.js";
-import { darkModeKey, styleKey } from "@/config.js";
+import { useMainStore } from "@/stores/main.js";
 
 import "./css/main.css";
 
@@ -16,18 +15,14 @@ const pinia = createPinia();
 createApp(App).use(router).use(pinia).mount("#app");
 
 /* Init Pinia stores */
-const mainStore = useMainStore(pinia);
 const styleStore = useStyleStore(pinia);
-
-/* Fetch sample data */
-mainStore.fetch("clients");
-mainStore.fetch("history");
-
-/* App style */
-styleStore.setStyle(localStorage[styleKey] ?? "basic");
+const mainStore = useMainStore(pinia);
 
 /* Dark mode */
 styleStore.setDarkMode(true);
+if (localStorage.getItem("token")) {
+  mainStore.setToken(localStorage.getItem("token"));
+}
 
 /* Default title tag */
 const defaultDocumentTitle = "Trading Platform Manager";

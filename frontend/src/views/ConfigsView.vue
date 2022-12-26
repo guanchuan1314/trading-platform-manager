@@ -10,9 +10,10 @@ import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
 import { reactive, ref } from "vue";
-import axios from "axios";
+import Axios from "@/models/axios.js";
 import NotificationBar from "@/components/NotificationBar.vue";
 
+const axios = new Axios();
 const configs = ref([]);
 const showAddConfigs = ref(false);
 const addConfigErrorMessage = ref("");

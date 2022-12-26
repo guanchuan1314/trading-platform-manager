@@ -26,8 +26,6 @@ const emit = defineEmits([
   "selectConfigs",
 ]);
 
-const isModalActive = ref(false);
-
 const showConfirmDeleteAccountModal = ref(false);
 
 const selectedAccountName = ref("");
@@ -76,12 +74,16 @@ const selectAccountToUpdateConfig = (name) => {
       </tr>
     </thead>
     <tbody v-if="accounts.length == 0">
-      <div class="text-center py-24 text-gray-500 dark:text-slate-400">
-        <p>
-          You haven't add any accounts. Please the add button on the top right
-          to add account.
-        </p>
-      </div>
+      <tr>
+        <td colspan="5">
+          <div class="text-center py-24 text-gray-500 dark:text-slate-400">
+            <p>
+              You haven't add any accounts. Please the add button on the top
+              right to add account.
+            </p>
+          </div>
+        </td>
+      </tr>
     </tbody>
     <tbody v-if="accounts.length > 0">
       <tr v-for="account in accounts" :key="account.name">

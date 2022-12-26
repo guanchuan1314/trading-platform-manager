@@ -10,8 +10,9 @@ import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
 import { reactive, ref } from "vue";
-import axios from "axios";
+import Axios from "@/models/axios.js";
 
+const axios = new Axios();
 const accounts = ref([]);
 const configs = ref([]);
 const selectedAccount = ref(null);

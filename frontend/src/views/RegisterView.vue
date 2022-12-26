@@ -10,7 +10,6 @@ import BaseButton from "@/components/BaseButton.vue";
 import BaseButtons from "@/components/BaseButtons.vue";
 import LayoutGuest from "@/layouts/LayoutGuest.vue";
 import Axios from "@/models/axios.js";
-import { useMainStore } from "@/stores/main.js";
 
 const axios = new Axios();
 const form = reactive({
@@ -20,14 +19,13 @@ const form = reactive({
 
 const router = useRouter();
 
-const login = async () => {
-  let response = await axios.post("/api/main/login", form);
-  if (response.data.status == "success") {
-    let mainStore = useMainStore();
-    localStorage.setItem("token", response.data.token);
-    mainStore.setToken(response.data.token);
-    router.push("/");
-  }
+const register = async () => {
+  try {
+    let response = axios.post("/api/main/register", form);
+    if (response.data.status == "success") {
+      router.push("/login");
+    }
+  } catch (e) {}
 };
 </script>
 
@@ -55,7 +53,7 @@ const login = async () => {
         </FormField>
         <template #footer>
           <BaseButtons>
-            <BaseButton color="info" label="Login" @click="login()" />
+            <BaseButton color="info" label="Register" @click="register()" />
           </BaseButtons>
         </template>
       </CardBox>

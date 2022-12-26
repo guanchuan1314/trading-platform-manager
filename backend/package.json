@@ -33,6 +33,7 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/serve-static": "^3.0.0",
     "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.0",
     "pkg": "^5.8.0",
     "process-list": "^2.0.0",
     "reflect-metadata": "^0.1.13",

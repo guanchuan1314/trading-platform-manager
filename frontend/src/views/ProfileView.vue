@@ -33,10 +33,6 @@ const passwordForm = reactive({
   password_confirmation: "",
 });
 
-const submitProfile = () => {
-  mainStore.setUser(profileForm);
-};
-
 const submitPass = () => {
   //
 };

@@ -7,11 +7,11 @@ import {
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
-import { Req } from '@nestjs/common/decorators';
+import { Param, Query, Req } from '@nestjs/common/decorators';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as fs from 'fs';
 import { diskStorage } from 'multer';
 import { Config } from 'src/models/config';
+import { Global } from 'src/models/global';
 import { MPath } from 'src/models/mpath';
 
 export class CreateConfigDto {
@@ -20,10 +20,16 @@ export class CreateConfigDto {
   platform: string;
   symbol: string;
   timeframe: string;
+  token: string;
 }
 
 export class DeleteConfigDto {
   name: string;
+  token: string;
+}
+
+export class ListConfigDto {
+  token: string;
 }
 
 @Controller('config')
@@ -34,6 +40,7 @@ export class ConfigController {
   async addConfig(@Body() createConfigDto: CreateConfigDto) {
     const config = new Config();
     try {
+      await Global.checkPermission(createConfigDto.token);
       await config.addConfig(createConfigDto.name, {
         remark: createConfigDto.remark,
         platform: createConfigDto.platform,
@@ -47,9 +54,10 @@ export class ConfigController {
   }
 
   @Get('list')
-  async listConfigs() {
+  async listConfigs(@Query() listConfigDto: ListConfigDto) {
     const config = new Config();
     try {
+      await Global.checkPermission(listConfigDto.token);
       const configs = await config.getConfigs();
 
       return {
@@ -66,6 +74,7 @@ export class ConfigController {
   async deleteConfig(@Body() deleteConfigDto: DeleteConfigDto) {
     const config = new Config();
     try {
+      await Global.checkPermission(deleteConfigDto.token);
       await config.deleteConfig(deleteConfigDto.name);
       return { status: 'success', message: 'Config deleted' };
     } catch (e) {
