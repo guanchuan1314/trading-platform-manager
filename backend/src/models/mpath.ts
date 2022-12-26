@@ -1,8 +1,11 @@
 import * as path from 'path';
+import { Global } from './global';
 
 export class MPath {
   public static getRootPath(): string {
-    return path.resolve(__dirname.split('backend')[0]);
+    return Global.isDev()
+      ? path.resolve(__dirname.split('backend')[0])
+      : path.resolve(process.cwd());
   }
 
   public static getConfigPath(config): string {

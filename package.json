@@ -1,0 +1,23 @@
+{
+  "name": "trading-platform-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "node deploy.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guanchuan1314/trading-platform-manager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/guanchuan1314/trading-platform-manager/issues"
+  },
+  "homepage": "https://github.com/guanchuan1314/trading-platform-manager#readme",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "fs-extra": "^11.1.0"
+  }
+}

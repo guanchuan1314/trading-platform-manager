@@ -19,12 +19,12 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "pkg:win": "pkg . -t node16-win-x64 -o app-win --debug"
+    "pkg:win": "pkg . --targets node16-win-x64 --output start.exe"
   },
-  "bin": "dist/main.js",
+  "bin": "backend/main.js",
   "pkg": {
     "assets": [
-      "../frontend/dist/**/"
+      "backend/frontend"
     ]
   },
   "dependencies": {
@@ -33,6 +33,7 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/serve-static": "^3.0.0",
     "fs": "^0.0.1-security",
+    "pkg": "^5.8.0",
     "process-list": "^2.0.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
