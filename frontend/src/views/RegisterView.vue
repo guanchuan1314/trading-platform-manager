@@ -21,7 +21,7 @@ const router = useRouter();
 
 const register = async () => {
   try {
-    let response = axios.post("/api/main/register", form);
+    let response = await axios.post("/api/main/register", form);
     if (response.data.status == "success") {
       router.push("/login");
     }

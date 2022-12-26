@@ -5,7 +5,19 @@ import Axios from "@/models/axios.js";
 
 const axios = new Axios();
 
-const ifAuthenticated = (to, from, next) => {
+const ifAuthenticated = async (to, from, next) => {
+  const response = await axios.get("/api/main/data");
+  if (response.data.status == "error") {
+    router.push({
+      name: "register",
+      params: {
+        returnTo: to.path,
+        query: to.query,
+      },
+    });
+    return;
+  }
+
   const mainStore = useMainStore();
   if (mainStore.token) {
     next();
@@ -22,17 +34,17 @@ const ifAuthenticated = (to, from, next) => {
 
 const ifSetup = async (to, from, next) => {
   const response = await axios.get("/api/main/data");
-  if (response.data.status == "success") {
-    next();
+  if (response.data.status != "success") {
+    router.push({
+      name: "register",
+      params: {
+        returnTo: to.path,
+        query: to.query,
+      },
+    });
     return;
   }
-  router.push({
-    name: "register",
-    params: {
-      returnTo: to.path,
-      query: to.query,
-    },
-  });
+  next();
 };
 
 const ifNotSetup = async (to, from, next) => {
