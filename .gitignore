@@ -3,3 +3,4 @@
 /configs/*
 /deploy
 /node_modules
+data.json
