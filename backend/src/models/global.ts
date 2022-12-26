@@ -9,6 +9,11 @@ export class Global {
     return num;
   }
 
+  public static roundUp(num, precision): number {
+    precision = Math.pow(10, precision);
+    return Math.ceil(num * precision) / precision;
+  }
+
   public static isDev() {
     return __dirname.indexOf(process.cwd()) !== -1;
   }
