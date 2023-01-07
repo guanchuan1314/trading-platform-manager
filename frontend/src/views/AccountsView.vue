@@ -50,6 +50,7 @@ const selectConfigs = async (account) => {
   await listConfigs();
   selectedAccount.value = account;
   updateConfigForm.name = account.name;
+  updateConfigForm.configs = []
   for (let config of configs.value) {
     if (account.configs.includes(config.name)) {
       updateConfigForm.configs.push(config.name);
@@ -154,12 +155,12 @@ const listAccounts = async () => {
 };
 listAccounts();
 
-const deployAccounts = async() => {
+const deployAccounts = async () => {
   let response = await axios.post("/api/account/deploy");
   if (response.data.status == "success") {
     await listAccounts();
   }
-}
+};
 </script>
 
 <template>
@@ -173,7 +174,7 @@ const deployAccounts = async() => {
       @confirm="saveConfigs()"
       @cancel="cancelAddAccount()"
     >
-      <div class="h-100">
+      <div class="h-100" style="height: 300px; overflow: auto">
         <table>
           <tr v-for="config in configs" :key="config.name">
             <td width="10">
