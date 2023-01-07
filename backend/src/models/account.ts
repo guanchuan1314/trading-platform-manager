@@ -120,9 +120,7 @@ export class Account {
     fs.mkdirSync(
       MPath.getPlatformPath(accountName + '/TradingPlatformManager/Config'),
     );
-    fs.mkdirSync(
-      MPath.getPlatformPath(accountName + '/MQL5/Profiles/Charts/TTM'),
-    );
+    fs.mkdirSync(MPath.getPlatformPath(accountName + '/MQL5/Experts/TTM'));
 
     for (const key of Object.keys(data)) {
       await this.writeData(accountName, key, data[key]);
