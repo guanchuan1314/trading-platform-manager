@@ -3,7 +3,7 @@ const fs = require('fs-extra');
 
 console.log("Cleaning up old build...");
 if(fs.existsSync('deploy')) {
-    fs.rmSync('deploy', { recursive: true, force: true })
+    fs.removeSync('deploy', { recursive: true, force: true })
 }
 
 console.log("Building new build...");
@@ -26,3 +26,7 @@ execSync('cd deploy && npm install --production');
 
 console.log("Building application...");
 execSync('cd deploy && npm run pkg:win');
+
+console.log("Removing unnecessary files...");
+fs.rmSync('deploy/backend', { recursive: true, force: true })
+fs.rmSync('deploy/node_modules', { recursive: true, force: true })

@@ -5,8 +5,8 @@ export default class Axios {
     return axios.get(url + "?token=" + localStorage.getItem("token"));
   }
 
-  post(url, data) {
+  post(url, data, config = {}) {
     data.token = localStorage.getItem("token");
-    return axios.post(url, data);
+    return axios.post(url, data, config);
   }
 }
