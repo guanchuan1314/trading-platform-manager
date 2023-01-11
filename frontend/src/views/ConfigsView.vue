@@ -9,21 +9,26 @@ import BaseButton from "@/components/BaseButton.vue";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
-import { reactive, ref } from "vue";
+import { reactive, ref, watch } from "vue";
 import Axios from "@/models/axios.js";
 import NotificationBar from "@/components/NotificationBar.vue";
 
 const axios = new Axios();
 const configs = ref([]);
+const searchConfigs = ref([]);
 const showAddConfigs = ref(false);
 const addConfigErrorMessage = ref("");
 const errorMessage = ref("");
+let searchText = ref("");
 const form = reactive({
   name: "",
   remark: "",
   platform: "mt5",
   timeframe: "60",
   symbol: "EURUSD",
+});
+watch(searchText, () => {
+  filterConfigs();
 });
 
 const platformOptions = [
@@ -116,12 +121,20 @@ const deleteConfig = async (name) => {
   }
 };
 
+const filterConfigs = () => {
+  searchConfigs.value = configs.value.filter((config) => {
+    let combinedText = config.name + config.platform + config.symbol;
+    return combinedText.toLowerCase().includes(searchText.value.toLowerCase());
+  });
+};
+
 const listConfigs = async () => {
   try {
     let response = await axios.get("/api/config/list");
     if (response.data.status == "success") {
       configs.value = response.data.configs;
     }
+    filterConfigs();
   } catch (e) {
     displayGlobalConfigError(
       e.response && e.response.data ? e.response.data.message : e.message
@@ -178,10 +191,18 @@ listConfigs();
       >
         {{ errorMessage }}
       </NotificationBar>
+      <FormField label="" help="">
+        <FormControl
+          v-model="searchText"
+          type="text"
+          autocomplete="nofill"
+          placeholder="Type in text to search..."
+        />
+      </FormField>
       <CardBox class="mb-6" has-table>
         <ConfigsTable
           checkable
-          :configs="configs"
+          :configs="searchConfigs"
           @confirm="deleteConfig"
           @reload-configs="listConfigs"
         />

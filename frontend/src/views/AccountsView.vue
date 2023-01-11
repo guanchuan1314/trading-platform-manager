@@ -9,16 +9,18 @@ import BaseButton from "@/components/BaseButton.vue";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
-import { reactive, ref } from "vue";
+import { reactive, ref, watch } from "vue";
 import Axios from "@/models/axios.js";
 
 const axios = new Axios();
 const accounts = ref([]);
+const searchAccounts = ref([]);
 const configs = ref([]);
 const selectedAccount = ref(null);
 
 let showAddAccount = ref(false);
 let showSelectConfigs = ref(false);
+let searchText = ref("");
 let form = reactive({
   name: "",
   account: "",
@@ -30,7 +32,9 @@ let updateConfigForm = reactive({
   name: "",
   configs: [],
 });
-
+watch(searchText, () => {
+  filterAccounts();
+});
 const platformOptions = [
   { id: "mt4", label: "Metatrader 4 (Not supported at the moment)" },
   { id: "mt5", label: "Metatrader 5" },
@@ -50,7 +54,7 @@ const selectConfigs = async (account) => {
   await listConfigs();
   selectedAccount.value = account;
   updateConfigForm.name = account.name;
-  updateConfigForm.configs = []
+  updateConfigForm.configs = [];
   for (let config of configs.value) {
     if (account.configs.includes(config.name)) {
       updateConfigForm.configs.push(config.name);
@@ -147,11 +151,19 @@ const listConfigs = async () => {
   }
 };
 
+const filterAccounts = async () => {
+  searchAccounts.value = accounts.value.filter((account) => {
+    const combined = account.name + account.account + account.broker;
+    return combined.toLowerCase().includes(searchText.value.toLowerCase());
+  });
+};
+
 const listAccounts = async () => {
   let response = await axios.get("/api/account/list");
   if (response.data.status == "success") {
     accounts.value = response.data.accounts;
   }
+  filterAccounts();
 };
 listAccounts();
 
@@ -249,9 +261,17 @@ const deployAccounts = async () => {
           />
         </div>
       </SectionTitleLineWithButton>
+      <FormField label="" help="">
+        <FormControl
+          v-model="searchText"
+          type="text"
+          autocomplete="nofill"
+          placeholder="Type in text to search..."
+        />
+      </FormField>
       <CardBox class="mb-6" has-table>
         <AccountsTable
-          :accounts="accounts"
+          :accounts="searchAccounts"
           @confirm="deleteAccount"
           @start-account="startAccount"
           @stop-account="stopAccount"

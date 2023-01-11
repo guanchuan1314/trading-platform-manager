@@ -105,6 +105,7 @@ const selectAccountToUpdateConfig = (name) => {
               color="info"
               :icon="mdiCogOutline"
               small
+              :label="'[' + account.configs.length + ']'"
               @click="selectAccountToUpdateConfig(account)"
             />
             <BaseButton

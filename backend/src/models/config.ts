@@ -12,6 +12,30 @@ export class Config {
     }
   }
 
+  private getPeriodInfo(timeframe) {
+    switch (timeframe) {
+      case '1':
+        return { period_type: 0, timeframe: 1 };
+      case '5':
+        return { period_type: 0, timeframe: 5 };
+      case '15':
+        return { period_type: 0, timeframe: 15 };
+      case '30':
+        return { period_type: 0, timeframe: 30 };
+      case '60':
+        return { period_type: 1, timeframe: 1 };
+      case '240':
+        return { period_type: 1, timeframe: 4 };
+      case '1440':
+        return { period_type: 2, timeframe: 1 };
+      case '10080':
+        return { period_type: 3, timeframe: 1 };
+      case '43200':
+        return { period_type: 4, timeframe: 1 };
+      default:
+        return { period_type: 0, timeframe: 1 };
+    }
+  }
   public async getSetString(configName) {
     if (
       fs.existsSync(
@@ -37,9 +61,17 @@ export class Config {
         '{{SYMBOL}}',
         await this.readData(configName, 'symbol'),
       );
+
+      const periodInfo = this.getPeriodInfo(
+        await this.readData(configName, 'timeframe'),
+      );
       chartTemplate = chartTemplate.replace(
         '{{TIMEFRAME}}',
-        await this.readData(configName, 'timeframe'),
+        String(periodInfo.timeframe),
+      );
+      chartTemplate = chartTemplate.replace(
+        '{{PERIOD_TYPE}}',
+        String(periodInfo.period_type),
       );
 
       if (fs.existsSync(MPath.getConfigPath(configName + '/set.set'))) {
