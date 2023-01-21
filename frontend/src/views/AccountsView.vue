@@ -9,14 +9,18 @@ import BaseButton from "@/components/BaseButton.vue";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
-import { reactive, ref, watch } from "vue";
-import Axios from "@/models/axios.js";
+import { reactive, ref, watch, computed } from "vue";
+import { useAccountStore } from "@/stores/account.js";
 
-const axios = new Axios();
-const accounts = ref([]);
-const searchAccounts = ref([]);
 const configs = ref([]);
 const selectedAccount = ref(null);
+const accountStore = useAccountStore();
+const accounts = computed(() => accountStore.accounts)
+const searchAccounts = computed(() => accounts.value.filter((account) => {
+  if(!searchText.value) return true;
+  const combined = account.name + account.account + account.broker;
+  return combined.toLowerCase().includes(searchText.value.toLowerCase()); 
+}));
 
 let showAddAccount = ref(false);
 let showSelectConfigs = ref(false);
@@ -32,21 +36,15 @@ let updateConfigForm = reactive({
   name: "",
   configs: [],
 });
-watch(searchText, () => {
-  filterAccounts();
-});
 const platformOptions = [
   { id: "mt4", label: "Metatrader 4 (Not supported at the moment)" },
   { id: "mt5", label: "Metatrader 5" },
 ];
 
-let addAccountErrorMessage = ref("");
-
 const saveConfigs = async () => {
-  let response = await axios.post("/api/account/configs", updateConfigForm);
-  if (response.data.status == "success") {
+  let success = await accountStore.updateConfig(updateConfigForm)
+  if(success){
     showSelectConfigs.value = false;
-    await listAccounts();
   }
 };
 
@@ -64,21 +62,15 @@ const selectConfigs = async (account) => {
 };
 
 const startAccount = async (name) => {
-  let response = await axios.post("/api/account/start", {
+  await accountStore.start({
     name: name,
   });
-  if (response.data.status == "success") {
-    await listAccounts();
-  }
 };
 
 const stopAccount = async (name) => {
-  let response = await axios.post("/api/account/stop", {
+  await accountStore.stop({
     name: name,
   });
-  if (response.data.status == "success") {
-    await listAccounts();
-  }
 };
 
 const cancelAddAccount = () => {
@@ -88,60 +80,37 @@ const cancelAddAccount = () => {
   form.broker = "";
 };
 
-const displayAddAccountError = (message) => {
-  showAddAccount.value = true;
-  addAccountErrorMessage.value = message;
-};
-
 const addAccount = async () => {
-  try {
-    if (form.name == "") {
-      displayAddAccountError("Name is required");
-      return;
-    }
-    if (form.account == "") {
-      displayAddAccountError("Account is required");
-      return;
-    }
-    if (form.password == "") {
-      displayAddAccountError("Password is required");
-      return;
-    }
-    if (form.broker == "") {
-      displayAddAccountError("Broker is required");
-      return;
-    }
-    if (form.platform == "") {
-      displayAddAccountError("Platform is required");
-      return;
-    }
+  if (form.name == "") {
+    return;
+  }
+  if (form.account == "") {
+    return;
+  }
+  if (form.password == "") {
+    return;
+  }
+  if (form.broker == "") {
+    return;
+  }
+  if (form.platform == "") {
+    return;
+  }
 
-    let response = await axios.post("/api/account/add", form);
-    if (response.data.status == "success") {
-      showAddAccount.value = false;
-      form.name = "";
-      form.account = "";
-      form.password = "";
-      form.broker = "";
-      await listAccounts();
-    } else {
-      addAccountErrorMessage.value = response.data.message;
-      showAddAccount.value = true;
-    }
-  } catch (e) {
-    displayAddAccountError(
-      e.response && e.response.data ? e.response.data.message : e.message
-    );
+  let success = await accountStore.add(form);
+  if(success){
+    showAddAccount.value = false;
+    form.name = "";
+    form.account = "";
+    form.password = "";
+    form.broker = "";
   }
 };
 
 const deleteAccount = async (name) => {
-  let response = await axios.post("/api/account/delete", {
+  await accountStore.delete({
     name: name,
   });
-  if (response.data.status == "success") {
-    await listAccounts();
-  }
 };
 
 const listConfigs = async () => {
@@ -151,27 +120,8 @@ const listConfigs = async () => {
   }
 };
 
-const filterAccounts = async () => {
-  searchAccounts.value = accounts.value.filter((account) => {
-    const combined = account.name + account.account + account.broker;
-    return combined.toLowerCase().includes(searchText.value.toLowerCase());
-  });
-};
-
-const listAccounts = async () => {
-  let response = await axios.get("/api/account/list");
-  if (response.data.status == "success") {
-    accounts.value = response.data.accounts;
-  }
-  filterAccounts();
-};
-listAccounts();
-
 const deployAccounts = async () => {
-  let response = await axios.post("/api/account/deploy");
-  if (response.data.status == "success") {
-    await listAccounts();
-  }
+  let success = await accountStore.deploy();
 };
 </script>
 
@@ -182,7 +132,6 @@ const deployAccounts = async () => {
       button-label="Save"
       title="Select Configs"
       has-cancel
-      :message="addAccountErrorMessage"
       @confirm="saveConfigs()"
       @cancel="cancelAddAccount()"
     >
@@ -206,7 +155,6 @@ const deployAccounts = async () => {
       button-label="Add Account"
       title="Accounts"
       has-cancel
-      :message="addAccountErrorMessage"
       @confirm="addAccount()"
       @cancel="cancelAddAccount()"
     >
@@ -245,7 +193,6 @@ const deployAccounts = async () => {
             color="info"
             @click="
               showAddAccount = true;
-              addAccountErrorMessage = '';
               form.name = '';
               form.account = '';
               form.password = '';
