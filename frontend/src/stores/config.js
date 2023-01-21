@@ -29,6 +29,18 @@ export const useConfigStore = defineStore("config", {
             return true;
         }
         return false;
+    },
+    async upload(params){
+        let response = await axios.post("/api/config/upload", params, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        if (response.data.status == "success") {
+            this.list()
+            return true;
+        }
+        return false;
     }
   },
 });

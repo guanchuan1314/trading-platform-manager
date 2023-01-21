@@ -13,7 +13,9 @@ import BaseButtons from "@/components/BaseButtons.vue";
 import BaseButton from "@/components/BaseButton.vue";
 import IconRounded from "@/components/IconRounded.vue";
 import Axios from "@/models/axios.js";
+import { useConfigStore } from "@/stores/config.js";
 
+const configStore = useConfigStore();
 const axios = new Axios();
 const showConfirmDeleteConfigModal = ref(false);
 const selectedConfigName = ref("");
@@ -36,15 +38,10 @@ const resetForm = () => {
 const fileSelected = async (e) => {
   form.file = e.target.files[0];
   e.target.value = "";
-  let response = await axios.post("/api/config/upload", form, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  if (response.data.status == "success") {
-    emit("reloadConfigs");
+  let success = await configStore.upload(form);
+  if(success){
+    resetForm();
   }
-  resetForm();
 };
 
 const inputClicked = async (name, type, platform) => {
