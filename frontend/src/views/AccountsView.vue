@@ -9,7 +9,7 @@ import BaseButton from "@/components/BaseButton.vue";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
-import { reactive, ref, watch, computed } from "vue";
+import { reactive, ref, computed } from "vue";
 import { useAccountStore } from "@/stores/account.js";
 
 const configs = ref([]);
