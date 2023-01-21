@@ -5,6 +5,7 @@ import App from "./App.vue";
 import router from "./router";
 import { useStyleStore } from "@/stores/style.js";
 import { useMainStore } from "@/stores/main.js";
+import { useAccountStore } from "@/stores/account.js";
 
 import "./css/main.css";
 
@@ -17,6 +18,10 @@ createApp(App).use(router).use(pinia).mount("#app");
 /* Init Pinia stores */
 const styleStore = useStyleStore(pinia);
 const mainStore = useMainStore(pinia);
+const accountStore = useAccountStore(pinia);
+
+mainStore.preload()
+accountStore.list();
 
 /* Dark mode */
 styleStore.setDarkMode(true);
