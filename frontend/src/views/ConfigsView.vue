@@ -9,26 +9,24 @@ import BaseButton from "@/components/BaseButton.vue";
 import CardBoxModal from "@/components/CardBoxModal.vue";
 import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
-import { reactive, ref, watch } from "vue";
-import Axios from "@/models/axios.js";
-import NotificationBar from "@/components/NotificationBar.vue";
+import { reactive, ref, computed } from "vue";
+import { useConfigStore } from "@/stores/config.js";
 
-const axios = new Axios();
-const configs = ref([]);
-const searchConfigs = ref([]);
-const showAddConfigs = ref(false);
-const addConfigErrorMessage = ref("");
-const errorMessage = ref("");
+const configStore = useConfigStore();
 let searchText = ref("");
+const configs = computed(() => configStore.configs);
+const searchConfigs = computed(() => configs.value.filter((config) => {
+  if(!searchText.value) return true;
+  let combinedText = config.name + config.platform + config.symbol;
+  return combinedText.toLowerCase().includes(searchText.value.toLowerCase());
+}));
+const showAddConfigs = ref(false);
 const form = reactive({
   name: "",
   remark: "",
   platform: "mt5",
   timeframe: "60",
   symbol: "EURUSD",
-});
-watch(searchText, () => {
-  filterConfigs();
 });
 
 const platformOptions = [
@@ -56,15 +54,6 @@ const resetForm = () => {
   form.symbol = "EURUSD";
 };
 
-const displayAddConfigError = (message) => {
-  showAddConfigs.value = true;
-  addConfigErrorMessage.value = message;
-};
-
-const displayGlobalConfigError = (message) => {
-  errorMessage.value = message;
-};
-
 const cancelAddConfig = () => {
   form.name = "";
   form.remark = "";
@@ -72,76 +61,31 @@ const cancelAddConfig = () => {
 };
 
 const addConfig = async () => {
-  try {
     if (!form.name) {
-      displayAddConfigError("Please enter a name for the config.");
       return;
     }
     if (!form.platform) {
-      displayAddConfigError("Please select a platform.");
       return;
     }
     if (!form.timeframe) {
-      displayAddConfigError("Please select a timeframe.");
       return;
     }
     if (!form.symbol) {
-      displayAddConfigError("Please enter a symbol.");
       return;
     }
 
-    let response = await axios.post("/api/config/add", form);
-    if (response.data.status == "success") {
+    let success = await configStore.add(form);
+    if (success) {
       showAddConfigs.value = false;
       resetForm();
-      listConfigs();
-    } else {
-      displayAddConfigError(response.message);
     }
-  } catch (e) {
-    displayAddConfigError(
-      e.response && e.response.data ? e.response.data.message : e.message
-    );
-  }
 };
 
 const deleteConfig = async (name) => {
-  try {
-    let response = await axios.post("/api/config/delete", {
-      name: name,
-    });
-    if (response.data.status == "success") {
-      await listConfigs();
-      displayGlobalConfigError(`${name} has been deleted.`);
-    }
-  } catch (e) {
-    displayGlobalConfigError(
-      e.response && e.response.data ? e.response.data.message : e.message
-    );
-  }
-};
-
-const filterConfigs = () => {
-  searchConfigs.value = configs.value.filter((config) => {
-    let combinedText = config.name + config.platform + config.symbol;
-    return combinedText.toLowerCase().includes(searchText.value.toLowerCase());
+  let success = await configStore.delete({
+    name: name,
   });
 };
-
-const listConfigs = async () => {
-  try {
-    let response = await axios.get("/api/config/list");
-    if (response.data.status == "success") {
-      configs.value = response.data.configs;
-    }
-    filterConfigs();
-  } catch (e) {
-    displayGlobalConfigError(
-      e.response && e.response.data ? e.response.data.message : e.message
-    );
-  }
-};
-listConfigs();
 </script>
 
 <template>
@@ -151,7 +95,6 @@ listConfigs();
       button-label="Add Config"
       title="Config"
       has-cancel
-      :message="addConfigErrorMessage"
       @confirm="addConfig()"
       @cancel="cancelAddConfig()"
     >
@@ -183,14 +126,6 @@ listConfigs();
           @click="showAddConfigs = true"
         />
       </SectionTitleLineWithButton>
-      <NotificationBar
-        v-if="errorMessage"
-        :show-dismiss="false"
-        color="danger"
-        :icon="mdiMonitorCellphone"
-      >
-        {{ errorMessage }}
-      </NotificationBar>
       <FormField label="" help="">
         <FormControl
           v-model="searchText"
