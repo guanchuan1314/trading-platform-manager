@@ -6,13 +6,15 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  StreamableFile,
 } from '@nestjs/common';
-import { Param, Query, Req } from '@nestjs/common/decorators';
+import { Param, Query, Req, Res } from '@nestjs/common/decorators';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { Config } from 'src/models/config';
 import { Global } from 'src/models/global';
 import { MPath } from 'src/models/mpath';
+import type { Response } from 'express';
 
 export class CreateConfigDto {
   name: string;
@@ -32,9 +34,46 @@ export class ListConfigDto {
   token: string;
 }
 
+export class ImportFromURLDto {
+  url: string;
+  token: string;
+}
+
 @Controller('config')
 export class ConfigController {
   configPath = '' as string;
+
+  @Post('importFromURL')
+  async importFromURL(@Body() importFromURLDto: ImportFromURLDto) {
+    const config = new Config();
+    try {
+      await Global.checkPermission(importFromURLDto.token);
+      const needSlashAtEnd = importFromURLDto.url.endsWith('/');
+      const downloadUrl =
+        importFromURLDto.url +
+        (needSlashAtEnd ? '' : '/') +
+        'api/config/download';
+      await config.updateConfigFromURL(downloadUrl);
+      return { status: 'success', message: 'Config updated' };
+    } catch (e) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
+  @Get('download')
+  async downloadConfig(@Res({ passthrough: true }) res: Response) {
+    const config = new Config();
+    try {
+      const file = await config.zipConfig();
+      res.set({
+        'Content-Type': 'application/zip',
+        'Content-Disposition': 'attachment; filename="config.zip"',
+      });
+      return new StreamableFile(file);
+    } catch (e) {
+      return { status: 'error', message: e.message };
+    }
+  }
 
   @Post('add')
   async addConfig(@Body() createConfigDto: CreateConfigDto) {

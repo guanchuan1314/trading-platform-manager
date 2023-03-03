@@ -1,6 +1,8 @@
 import { MPath } from './mpath';
 import * as fs from 'fs';
 import { Global } from './global';
+import * as AdmZip from 'adm-zip';
+import * as http from 'http';
 
 export class Config {
   public async getExpertExtension(configName) {
@@ -224,5 +226,36 @@ export class Config {
     return fs.existsSync(dataFolderName)
       ? fs.readFileSync(dataFolderName, { encoding: 'utf-8' })
       : '';
+  }
+
+  async zipConfig() {
+    const zip = new AdmZip();
+    zip.addLocalFolder(MPath.getConfigPath(''));
+    zip.writeZip(MPath.getTmpPath('config.zip'));
+
+    return fs.createReadStream(MPath.getTmpPath('config.zip'));
+  }
+
+  async downloadConfigFromURL(url) {
+    const file = fs.createWriteStream(MPath.getTmpPath('newConfig.zip'));
+    return new Promise((resolve, reject) => {
+      const request = http.get(url, function (response) {
+        response.pipe(file);
+        // after download completed close filestream
+        file.on('finish', () => {
+          file.close();
+          resolve('');
+        });
+      });
+    });
+  }
+
+  async updateConfigFromURL(url) {
+    await this.downloadConfigFromURL(url);
+    fs.rmSync(MPath.getConfigPath(''), { recursive: true });
+    fs.mkdirSync(MPath.getConfigPath(''));
+
+    const zip = new AdmZip(MPath.getTmpPath('newConfig.zip'));
+    zip.extractAllTo(MPath.getConfigPath(''), true);
   }
 }

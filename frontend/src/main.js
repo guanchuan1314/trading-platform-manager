@@ -6,6 +6,7 @@ import router from "./router";
 import { useStyleStore } from "@/stores/style.js";
 import { useMainStore } from "@/stores/main.js";
 import { useAccountStore } from "@/stores/account.js";
+import { useConfigStore } from "@/stores/config.js";
 
 import "./css/main.css";
 
@@ -19,9 +20,11 @@ createApp(App).use(router).use(pinia).mount("#app");
 const styleStore = useStyleStore(pinia);
 const mainStore = useMainStore(pinia);
 const accountStore = useAccountStore(pinia);
+const configStore = useConfigStore(pinia);
 
 mainStore.preload()
 accountStore.list();
+configStore.list();
 
 /* Dark mode */
 styleStore.setDarkMode(true);

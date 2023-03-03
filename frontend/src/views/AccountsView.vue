@@ -11,8 +11,10 @@ import FormField from "@/components/FormField.vue";
 import FormControl from "@/components/FormControl.vue";
 import { reactive, ref, computed } from "vue";
 import { useAccountStore } from "@/stores/account.js";
+import { useConfigStore } from "@/stores/config.js";
 
-const configs = ref([]);
+const configStore = useConfigStore();
+const configs =  computed(() => configStore.configs)
 const selectedAccount = ref(null);
 const accountStore = useAccountStore();
 const accounts = computed(() => accountStore.accounts)
@@ -49,7 +51,6 @@ const saveConfigs = async () => {
 };
 
 const selectConfigs = async (account) => {
-  await listConfigs();
   selectedAccount.value = account;
   updateConfigForm.name = account.name;
   updateConfigForm.configs = [];
@@ -78,6 +79,7 @@ const cancelAddAccount = () => {
   form.account = "";
   form.password = "";
   form.broker = "";
+  form.webRequest = "";
 };
 
 const addAccount = async () => {
@@ -111,13 +113,6 @@ const deleteAccount = async (name) => {
   await accountStore.delete({
     name: name,
   });
-};
-
-const listConfigs = async () => {
-  let response = await axios.get("/api/config/list");
-  if (response.data.status == "success") {
-    configs.value = response.data.configs;
-  }
 };
 
 const deployAccounts = async () => {

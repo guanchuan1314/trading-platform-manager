@@ -10,6 +10,7 @@ console.log("Building new build...");
 fs.mkdirSync('deploy')
 fs.mkdirSync('deploy/configs')
 fs.mkdirSync('deploy/platforms')
+fs.mkdirSync('deploy/tmp')
 fs.copySync('resources', 'deploy/resources')
 
 console.log("Building backend...");
